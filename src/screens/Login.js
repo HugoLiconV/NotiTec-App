@@ -1,6 +1,8 @@
 /* eslint-disable react-native/no-inline-styles */
 import React, {useState} from 'react';
 import {StyleSheet, StatusBar} from 'react-native';
+import AsyncStorage from '@react-native-community/async-storage';
+import Snackbar from 'react-native-snackbar';
 import {
   TextInput,
   View,
@@ -17,18 +19,42 @@ import {
   BRAND,
   CREATE_ACCOUNT_SCREEN,
   HOME_SCREEN,
+  AUTH_TOKEN,
+  ERROR_COLOR,
 } from '../constants';
+import AuthService from '../services/AuthService';
+import {NotificationService} from '../services/NotificationService';
 
 const TAG = '[LOGIN]:';
 
 const Login = props => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('hugo.val28@hotmail.com');
+  const [password, setPassword] = useState('1234565');
   const [showPassword, setShowPassword] = useState(false);
 
   async function login() {
-    console.log(`${TAG} ${email} ${password}`);
-    navigateToHome();
+    const res = await AuthService()
+      .login(email, password)
+      .catch(({response}) => {
+        console.log(`${TAG}: LOGIN FAILED: `, response);
+        if (response.status === 401) {
+          NotificationService().showError(
+            'Email o contraseña incorrecta. Verifica los datos',
+          );
+        }
+      });
+    if (res && res.token) {
+      storeToken(res.token);
+      navigateToHome();
+    }
+  }
+
+  async function storeToken(token) {
+    try {
+      await AsyncStorage.setItem(AUTH_TOKEN, token);
+    } catch (e) {
+      console.log(`${TAG} Error saving token: `, e);
+    }
   }
 
   function navigateToHome() {

@@ -19,7 +19,11 @@ import {
   BRAND,
   LOGIN_SCREEN,
   HOME_SCREEN,
+  AUTH_TOKEN,
 } from '../constants';
+import AsyncStorage from '@react-native-community/async-storage';
+import UserService from '../services/UserService';
+import {NotificationService} from '../services/NotificationService';
 
 const TAG = '[CREATE_ACCOUNT]:';
 
@@ -41,21 +45,39 @@ const CreateAccount = props => {
     return false;
   }
 
-  function createAccount() {
+  async function createAccount() {
     const errors = validatePasswords();
     if (!errors) {
-      console.log(`${TAG}: create account with: `, {
-        email,
-        name,
-        password,
-        confirmPassword,
-      });
-      navigateToHome();
+      const res = await UserService()
+        .createAccount(email, password, name, selectedCarrera)
+        .catch(({response}) => {
+          console.log(`${TAG}: LOGIN FAILED: `, response);
+          let message = '';
+          if (response.status === 409) {
+            message = 'El correo ya está registrado. Intenta con otro';
+          } else {
+            message = 'No se pudo crear cuenta, vuelve a intentarlo luego';
+          }
+          NotificationService().showError(message);
+        });
+      console.log('TCL: createAccount -> res', res);
+      if (res && res.token) {
+        storeToken(res.token);
+        navigateToHome();
+      }
+    }
+  }
+
+  async function storeToken(token) {
+    try {
+      await AsyncStorage.setItem(AUTH_TOKEN, token);
+    } catch (e) {
+      console.log(`${TAG} Error saving token: `, e);
     }
   }
 
   function navigateToHome() {
-    props.navigation.navigate(HOME_SCREEN)
+    props.navigation.navigate(HOME_SCREEN);
   }
 
   function navigateToLogin() {

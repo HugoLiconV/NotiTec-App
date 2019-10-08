@@ -7,6 +7,7 @@ import {CARRERAS, BACKGROUND_COLOR, SETTINGS_SCREEN, DETAILS_SCREEN} from '../co
 import NewsCard from '../components/NewsCard';
 import axios from 'axios';
 import Pagination from '../components/Pagination';
+import PushNotifications from '../core/PushNotifications';
 
 const TAG = '[HOME]:';
 
@@ -45,7 +46,7 @@ const Home = props => {
     if (!loading) {
       setLoading(true);
       const res = await axios(
-        `http://jsonplaceholder.typicode.com/posts?userId=${userId}&_page=${page}&_limit=${limit}`,
+        `https://jsonplaceholder.typicode.com/posts?userId=${userId}&_page=${page}&_limit=${limit}`,
       ).catch(e => {
         console.log(e);
         setLoading(false);
@@ -79,6 +80,7 @@ const Home = props => {
   return (
     <View styleName="fill-parent vertical v-center" style={styles.container}>
       <StatusBar backgroundColor={BACKGROUND_COLOR} barStyle="dark-content" />
+      <PushNotifications />
       <Titlebar>
         <Avatar source={require('../assets/avatar.jpg')} />
         <Title>Bienvenido,</Title>

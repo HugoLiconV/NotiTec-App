@@ -22,7 +22,7 @@ const NewsCard = ({post, onItemPress}) => {
           <FullImage
             source={{
               uri:
-                'http://backgroundlabs.com/wp-content/uploads/2013/08/mint-green-facebook-cover-580.png',
+                'https://backgroundlabs.com/wp-content/uploads/2013/08/mint-green-facebook-cover-580.png',
             }}
           />
         </Cover>
