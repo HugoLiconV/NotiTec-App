@@ -5,7 +5,10 @@ export const ACCENT_3 = '#81FCED';
 export const ACCENT_4 = '#FFCA58';
 export const BACKGROUND_COLOR = '#F4F8FB';
 export const BRAND = '#7D4CDB';
-export const ERROR_COLOR = '#D3113C';
+export const ERROR_COLOR = '#FF4040';
+export const WARNING_COLOR = '#FFAA15';
+export const SUCCESS_COLOR = '#00C781';
+export const DEFAULT_COLOR = '#444444';
 
 // :: SCREENS
 export const LOGIN_SCREEN = 'LOGIN_SCREEN';
