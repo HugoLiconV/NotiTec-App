@@ -3,7 +3,7 @@ import React from 'react';
 import {StyleSheet} from 'react-native';
 import {View, Icon, Title} from '@shoutem/ui';
 
-const Pagination = ({page, onPrevious, onNext}) => {
+const Pagination = ({page, onPrevious, onNext, totalPages}) => {
   return (
     <View styleName="horizontal v-center space-between">
       <Icon
@@ -15,7 +15,14 @@ const Pagination = ({page, onPrevious, onNext}) => {
         onPress={onPrevious}
       />
       <Title>{page || 0}</Title>
-      <Icon name="right-arrow" style={styles.icon} onPress={onNext} />
+      <Icon
+        name="right-arrow"
+        style={{
+          color: page === totalPages ? '#b8b3c3' : '#3c4560',
+          fontSize: 48,
+        }}
+        onPress={onNext}
+      />
     </View>
   );
 };

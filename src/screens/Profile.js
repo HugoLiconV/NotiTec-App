@@ -1,9 +1,8 @@
 /* eslint-disable react-native/no-inline-styles */
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   Text,
   View,
-  Heading,
   Button,
   Image,
   TextInput,
@@ -15,36 +14,94 @@ import {
 import {BACKGROUND_COLOR, CARRERAS, ACCENT_4} from '../constants';
 import {StyleSheet, StatusBar} from 'react-native';
 import GoBack from '../components/GoBack';
+import UserService from '../services/UserService';
+import {NotificationService} from '../services/NotificationService';
 
 const TAG = 'PROFILE';
 
 const Profile = props => {
-  const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
   const [validationError, setValidationError] = useState('');
-  const [selectedCarrera, setSelectedCarrera] = useState(CARRERAS[0]);
+  const [career, setCareer] = useState();
   const [showPassword, setShowPassword] = useState(false);
+  const [user, setUser] = useState({});
+  const [loading, setLoading] = useState(false);
 
   function validatePasswords() {
-    if (password !== confirmPassword) {
-      setValidationError('Las contraseñas no coinciden');
+    if (newPassword && !currentPassword) {
+      setValidationError(
+        'Necesitas introducir tu contraseña actual para cambiarla.',
+      );
       return true;
     }
     setValidationError('');
     return false;
   }
 
-  function updateProfile() {
+  async function me() {
+    setLoading(true);
+    const res = await UserService()
+      .me()
+      .catch(e => {
+        setLoading(false);
+      });
+    setUser(res);
+    setName(res.name);
+    setCareer(getCareerNameFromValue(res.career));
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    me();
+  }, []);
+
+  async function updateProfile() {
     const errors = validatePasswords();
     if (!errors) {
       console.log(`${TAG}: update profile with: `, {
         name,
-        password,
-        confirmPassword,
+        currentPassword,
+        newPassword,
       });
+      const requests = [];
+      if (newPassword) {
+        requests.push(
+          UserService().updatePassword(
+            user.id,
+            user.email,
+            currentPassword,
+            newPassword,
+          ),
+        );
+      }
+      requests.push(
+        UserService().updateUser(user.id, name, career.value, user.picture),
+      );
+      const res = await Promise.all(requests).catch(e => {
+        NotificationService().showError(
+          'No se pudo actualizar el perfil. Intentálo más tarde',
+        );
+      });
+      if (res) {
+        props.navigation.pop();
+        NotificationService().showSuccess(
+          'Tu perfil se actualizó correctamente',
+        );
+      }
     }
   }
+
+  function getCareerNameFromValue(career) {
+    const res = CARRERAS.find(c => c.value === career);
+    return res;
+  }
+
+  if (loading) {
+    return <Text styleName="h-center v-center">Cargando...</Text>;
+  }
+
   return (
     <View style={styles.container}>
       <StatusBar backgroundColor={BACKGROUND_COLOR} barStyle="dark-content" />
@@ -52,10 +109,7 @@ const Profile = props => {
       <Divider />
       <TouchableOpacity>
         <View styleName="horizontal h-center">
-          <Image
-            styleName="medium-avatar"
-            source={require('../assets/avatar.jpg')}
-          />
+          <Image styleName="medium-avatar" source={{uri: user.picture}} />
         </View>
       </TouchableOpacity>
       <Caption styleName="h-center">Presiona para cambiar la foto</Caption>
@@ -64,28 +118,30 @@ const Profile = props => {
         placeholder="Nombre"
         style={{selectionColor: ACCENT_4}}
         onChangeText={setName}
+        value={name}
+        defaultValue={user.name}
       />
       <TextInput
-        placeholder={'Contraseña'}
+        placeholder={'Contraseña actual'}
         secureTextEntry
         keyboardType={showPassword ? 'visible-password' : null}
         autoCompleteType="password"
-        onChangeText={setPassword}
+        onChangeText={setCurrentPassword}
         style={{selectionColor: ACCENT_4}}
       />
       <TextInput
-        placeholder={'Confirma tu contraseña'}
+        placeholder={'Nueva contraseña'}
         secureTextEntry
         autoCompleteType="password"
         keyboardType={showPassword ? 'visible-password' : null}
-        onChangeText={setConfirmPassword}
+        onChangeText={setNewPassword}
         style={{selectionColor: ACCENT_4}}
       />
       <DropDownMenu
         styleName="horizontal"
         options={CARRERAS}
-        selectedOption={selectedCarrera ? selectedCarrera : CARRERAS[0]}
-        onOptionSelected={setSelectedCarrera}
+        selectedOption={career ? career : getCareerNameFromValue(user.career)}
+        onOptionSelected={setCareer}
         titleProperty="name"
         valueProperty="value"
         style={{

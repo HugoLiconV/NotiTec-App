@@ -1,18 +1,19 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-community/async-storage';
-import {MASTER_KEY} from 'react-native-dotenv';
 import {AUTH_TOKEN} from '../constants';
 
-export default function HttpService(baseUrl = 'http://0.0.0.0:9000') {
+const BASE_URL =
+  process.env.NODE_ENV === 'production'
+    ? 'https://api-tec-app.herokuapp.com/'
+    : 'http://192.168.1.70:9000';
+
+export default function HttpService(baseUrl = BASE_URL) {
   axios.defaults.baseURL = baseUrl;
   axios.interceptors.request.use(
     async config => {
       const token = await AsyncStorage.getItem(AUTH_TOKEN);
-      if (token) {
+      if (token && !config.headers.Authorization) {
         config.headers.Authorization = `Bearer ${token}`;
-      }
-      if(config.data) {
-        config.data.access_token = MASTER_KEY;
       }
       return config;
     },
@@ -26,7 +27,6 @@ export default function HttpService(baseUrl = 'http://0.0.0.0:9000') {
       const response = await axios[method](url, data, options);
       return response.data;
     } catch (e) {
-      console.log("TCL: makeRequest -> e", e)
       return Promise.reject(e);
     }
   }

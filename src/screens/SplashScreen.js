@@ -9,6 +9,7 @@ import {
   ACCENT_4,
   LOGIN_SCREEN,
 } from '../constants';
+import { Image, Divider } from '@shoutem/ui';
 
 const SplashScreen = props => {
   useEffect(() => {
@@ -28,21 +29,31 @@ const SplashScreen = props => {
     const userToken = await AsyncStorage.getItem(AUTH_TOKEN).catch(() => {
       console.log('[INFO]: Error getting token');
     });
-    if (!userToken) {
-      redirectToAuth();
-      return;
-    }
-    redirectToHome();
+    setTimeout(() => {
+      if (!userToken) {
+        redirectToAuth();
+        return;
+      }
+      redirectToHome();
+    }, 700);
   }
 
   return (
     <View
       style={{
+        flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
       }}>
       <StatusBar backgroundColor={BACKGROUND_COLOR} barStyle="dark-content" />
+      <View style={{display: 'flex', alignItems: 'center', marginBottom: 19}}>
+        <Image
+          source={require('../assets/bison.png')}
+          style={{width: 72, height: 72}}
+        />
+      </View>
       <Text>Cargando...</Text>
+      <Divider />
       <ActivityIndicator color={ACCENT_4} size="large" />
     </View>
   );

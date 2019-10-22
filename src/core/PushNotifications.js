@@ -1,7 +1,7 @@
 import React, {useEffect} from 'react';
 import OneSignal from 'react-native-onesignal';
 
-const PushNotifications = () => {
+const PushNotifications = (props) => {
   useEffect(() => {
     OneSignal.init('fc848fe5-6044-4ca0-80db-301c4c336972');
     OneSignal.setSubscription(true);
@@ -18,6 +18,8 @@ const PushNotifications = () => {
 
   function onIds(device) {
     console.log('Device info: ', device);
+    console.log("TCL: onIds -> tag", props.tag)
+    OneSignal.sendTag('career', props.tag);
   }
 
   function onReceived(notification) {

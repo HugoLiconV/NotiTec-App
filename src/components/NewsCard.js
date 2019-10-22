@@ -11,24 +11,29 @@ import {
   Divider,
   Tile,
   TouchableOpacity,
+  Spinner,
 } from '@shoutem/ui';
 import styled from 'styled-components';
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
 
-const NewsCard = ({post, onItemPress}) => {
+dayjs.extend(relativeTime);
+
+const NewsCard = ({announcement, onItemPress}) => {
   return (
     <Container>
       <TouchableOpacity styleName="flexible" onPress={onItemPress}>
         <Cover>
           <FullImage
+            loadingIndicatorSource={<Spinner />}
             source={{
-              uri:
-                'https://backgroundlabs.com/wp-content/uploads/2013/08/mint-green-facebook-cover-580.png',
+              uri: announcement.image,
             }}
           />
         </Cover>
         <Content>
-          <Title>{post.title}</Title>
-          {/* <PriceCaption>$ 2.99 each</PriceCaption> */}
+          <Title>{announcement.title}</Title>
+          <DateCaption>{dayjs(announcement.createdAt).fromNow()}</DateCaption>
         </Content>
       </TouchableOpacity>
     </Container>
@@ -58,9 +63,9 @@ const FullImage = styled.Image`
 `;
 
 const Content = styled.View`
-  padding-top: 10px;
+  padding: 16px;
   flex-direction: column;
-  align-items: center;
+  /* align-items: center; */
   height: 60px;
 `;
 
@@ -70,9 +75,10 @@ const Title = styled.Text`
   font-weight: 600;
 `;
 
-const PriceCaption = styled.Text`
+const DateCaption = styled.Text`
   color: #b8b3c3;
   font-size: 15px;
+  text-align: left;
   font-weight: 600;
   margin-top: 4px;
 `;

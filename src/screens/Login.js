@@ -12,6 +12,7 @@ import {
   Heading,
   Caption,
   Subtitle,
+  Spinner,
 } from '@shoutem/ui';
 import {
   ACCENT_4,
@@ -28,24 +29,45 @@ import {NotificationService} from '../services/NotificationService';
 const TAG = '[LOGIN]:';
 
 const Login = props => {
-  const [email, setEmail] = useState('hugo.val28@hotmail.com');
-  const [password, setPassword] = useState('1234565');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [validationError, setValidationError] = useState('');
+
+  function validateForm() {
+    if (!email || !password) {
+      setValidationError('No debe haber campos vacios.');
+      return true;
+    }
+    setValidationError('');
+    return false;
+  }
 
   async function login() {
-    const res = await AuthService()
-      .login(email, password)
-      .catch(({response}) => {
-        console.log(`${TAG}: LOGIN FAILED: `, response);
-        if (response.status === 401) {
+    const errors = validateForm();
+    console.log("TCL: login -> errors", errors)
+    if (!errors) {
+      setLoading(true);
+      const res = await AuthService()
+        .login(email, password)
+        .catch(({response}) => {
+          console.log(`${TAG}: LOGIN FAILED: `, response);
+          if (response.status === 401) {
+            NotificationService().showError(
+              'Email o contraseña incorrecta. Verifica los datos',
+            );
+          }
           NotificationService().showError(
-            'Email o contraseña incorrecta. Verifica los datos',
+            'Error en el servidor. Intenta de nuevo luego.',
           );
-        }
-      });
-    if (res && res.token) {
-      storeToken(res.token);
-      navigateToHome();
+          setLoading(false);
+        });
+      setLoading(false);
+      if (res && res.token) {
+        storeToken(res.token);
+        navigateToHome();
+      }
     }
   }
 
@@ -96,9 +118,16 @@ const Login = props => {
         {showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
       </Caption>
       <Divider />
-      <Button onPress={login}>
-        <Text>Iniciar Sesión</Text>
+      <Button onPress={login} disabled={loading}>
+        {loading ? (
+          <Spinner style={{size: 'large'}} />
+        ) : (
+          <Text>Iniciar Sesión</Text>
+        )}
       </Button>
+      <Text styleName="h-center" style={{color: '#a2423d'}}>
+        {validationError}
+      </Text>
       <Divider />
       <Subtitle
         styleName="h-center"

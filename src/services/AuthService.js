@@ -1,3 +1,4 @@
+import {MASTER_KEY} from 'react-native-dotenv';
 import HttpService from './HttpService';
 import {encode as btoa} from 'base-64';
 
@@ -8,7 +9,9 @@ function AuthService() {
       return HttpService().makeRequest({
         url: '/auth',
         method: 'post',
-        data: {},
+        data: {
+          access_token: MASTER_KEY,
+        },
         options: {
           headers: {Authorization: basicAuth},
         },

@@ -23,7 +23,6 @@ const Settings = props => {
     try {
       await AsyncStorage.removeItem(AUTH_TOKEN);
     } catch (e) {
-      console.log("TCL: clearToken -> e", e)
       Object.keys(e).forEach(k => console.log(`${k} = `, e[k], "\n********"));
       // saving error
     }

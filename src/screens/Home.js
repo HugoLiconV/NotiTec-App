@@ -3,11 +3,18 @@ import {StyleSheet, StatusBar} from 'react-native';
 import {View, Icon, ListView} from '@shoutem/ui';
 import styled from 'styled-components';
 import Categories from '../components/Categories';
-import {CARRERAS, BACKGROUND_COLOR, SETTINGS_SCREEN, DETAILS_SCREEN} from '../constants';
+import {
+  CARRERAS,
+  BACKGROUND_COLOR,
+  SETTINGS_SCREEN,
+  DETAILS_SCREEN,
+} from '../constants';
 import NewsCard from '../components/NewsCard';
-import axios from 'axios';
 import Pagination from '../components/Pagination';
 import PushNotifications from '../core/PushNotifications';
+import UserService from '../services/UserService';
+import AnnouncementsService from '../services/AnnouncementsService';
+import NewsList from '../components/NewsList';
 
 const TAG = '[HOME]:';
 
@@ -16,50 +23,57 @@ const Home = props => {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState([]);
   const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [user, setUser] = useState({});
 
   function onSelectedCategory(item) {
     setCategory(item);
     setPage(1);
-    fetchPosts(item.userId, 1);
+    fetchPosts(item.value, 1);
   }
 
   function navigateToSettings() {
     props.navigation.push(SETTINGS_SCREEN);
   }
 
-  function onItemPress() {
-    navigateToDetails();
-  }
-
-  function navigateToDetails() {
-    props.navigation.navigate(DETAILS_SCREEN)
-  }
-
-  function renderRow(post) {
-    if (!post) {
-      return null;
-    }
-    return <NewsCard post={post} onItemPress={onItemPress} />;
-  }
-
-  async function fetchPosts(userId, page = 1, limit = 5) {
+  async function fetchPosts(career, page = 1, limit = 10) {
     if (!loading) {
       setLoading(true);
-      const res = await axios(
-        `https://jsonplaceholder.typicode.com/posts?userId=${userId}&_page=${page}&_limit=${limit}`,
-      ).catch(e => {
-        console.log(e);
-        setLoading(false);
-      });
-      data && setData(res.data);
+      const res = await AnnouncementsService().getAnnouncements(
+        page,
+        limit,
+        career,
+      );
+      res && setData(res.rows);
+      res && setTotalPages(Math.ceil(res.count / limit));
       setLoading(false);
     }
   }
 
+  async function me() {
+    const res = await UserService().me();
+    setUser(res);
+  }
+
+  function onRefresh() {
+    fetchPosts(user.career, page)
+  }
+
   useEffect(() => {
-    if (!loading) {
-      fetchPosts(category.userId, 1);
-    }
+    const didBlurSubscription = props.navigation.addListener(
+      'didFocus',
+      payload => {
+        me();
+      },
+    );
+    return () => {
+      didBlurSubscription.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    me();
+    fetchPosts(category.career, 1);
   }, []);
 
   function onPreviousPage() {
@@ -68,48 +82,75 @@ const Home = props => {
     }
     const previousPage = page - 1;
     setPage(previousPage);
-    fetchPosts(category.userId, previousPage);
+    fetchPosts(category.career, previousPage);
   }
 
   function onNextPage() {
+    if (page === totalPages) {
+      return;
+    }
     const nextPage = page + 1;
     setPage(nextPage);
-    fetchPosts(category.userId, nextPage);
+    fetchPosts(category.career, nextPage);
+  }
+
+  /**
+   *
+   * @param careers Array of all carrers
+   * @param userCarrer String User's career
+   * @returns Array of career rearranged to show the user's career first
+   */
+  function rearrangeCareerAray(careers, userCarrer) {
+    const general = {name: 'General', value: ''};
+    const result = [...careers];
+    if (!userCarrer) {
+      return [...result, general];
+    }
+    const index = careers.findIndex(c => c.value === userCarrer);
+    result.splice(index, 1);
+    result.unshift(careers[index], general);
+    return result;
   }
 
   return (
     <View styleName="fill-parent vertical v-center" style={styles.container}>
       <StatusBar backgroundColor={BACKGROUND_COLOR} barStyle="dark-content" />
-      <PushNotifications />
+      {user.career !== null && <PushNotifications tag={user.career} />}
       <Titlebar>
-        <Avatar source={require('../assets/avatar.jpg')} />
+        <Avatar source={{uri: user && user.picture}} />
         <Title>Bienvenido,</Title>
-        <Name>Aman</Name>
+        <Name>{user.name || ''}</Name>
         <Icon
           onPress={navigateToSettings}
           name="settings"
-          style={{position: 'absolute', right: 20, top: 5, color: '#3c4560'}}
+          style={{
+            position: 'absolute',
+            right: 20,
+            top: 5,
+            color: '#3c4560',
+          }}
         />
       </Titlebar>
       <View style={{marginBottom: 8}}>
         <Categories
-          items={CARRERAS}
+          items={rearrangeCareerAray(CARRERAS, user && user.career)}
           selectedIndex={0}
           onSelectedItem={onSelectedCategory}
         />
       </View>
-      <ListView
-        data={data}
-        renderRow={renderRow}
+
+      <NewsList
+        navigation={props.navigation}
+        onRefresh={onRefresh}
         loading={loading}
-        style={{
-          listContent: {
-            backgroundColor: BACKGROUND_COLOR,
-          },
-        }}
+        data={data}
       />
-      <Pagination page={page} onPrevious={onPreviousPage} onNext={onNextPage} />
-      {/* {restaurants.map(restaurant => <NewsCard restaurant={restaurant} />)} */}
+      <Pagination
+        page={page}
+        onPrevious={onPreviousPage}
+        onNext={onNextPage}
+        totalPages={totalPages}
+      />
     </View>
   );
 };

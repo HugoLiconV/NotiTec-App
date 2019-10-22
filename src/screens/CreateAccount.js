@@ -11,6 +11,7 @@ import {
   Heading,
   Caption,
   Subtitle,
+  Spinner,
 } from '@shoutem/ui';
 import {
   ACCENT_4,
@@ -35,11 +36,22 @@ const CreateAccount = props => {
   const [validationError, setValidationError] = useState('');
   const [selectedCarrera, setSelectedCarrera] = useState(CARRERAS[0]);
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   function validatePasswords() {
     if (password !== confirmPassword) {
       setValidationError('Las contraseñas no coinciden');
       return true;
+    } else if (password.length < 6) {
+      setValidationError('La contraseña debe de tener 6 o más dígitos');
+      return true;
+    } else if (
+      email === '' ||
+      password === '' ||
+      name === '' ||
+      confirmPassword === ''
+    ) {
+      setValidationError('No debe haber campos vacios.');
     }
     setValidationError('');
     return false;
@@ -48,8 +60,9 @@ const CreateAccount = props => {
   async function createAccount() {
     const errors = validatePasswords();
     if (!errors) {
+      setLoading(true);
       const res = await UserService()
-        .createAccount(email, password, name, selectedCarrera)
+        .createAccount(email, password, name, selectedCarrera.value)
         .catch(({response}) => {
           console.log(`${TAG}: LOGIN FAILED: `, response);
           let message = '';
@@ -60,7 +73,7 @@ const CreateAccount = props => {
           }
           NotificationService().showError(message);
         });
-      console.log('TCL: createAccount -> res', res);
+      setLoading(true);
       if (res && res.token) {
         storeToken(res.token);
         navigateToHome();
@@ -141,8 +154,12 @@ const CreateAccount = props => {
         {showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
       </Caption>
       <Divider />
-      <Button onPress={createAccount}>
-        <Text>Crear Cuenta</Text>
+      <Button onPress={createAccount} disabled={loading}>
+        {loading ? (
+          <Spinner style={{size: 'large'}} />
+        ) : (
+          <Text>Crear Cuenta</Text>
+        )}
       </Button>
       <Divider />
       <Subtitle
